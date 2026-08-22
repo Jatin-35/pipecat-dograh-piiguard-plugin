@@ -8,12 +8,12 @@ redaction point instead).
 
 Install (English)::
 
-    pip install "pipecat-plugins-piiguard[presidio]"
+    pip install "pipecat-dograh-piiguard[presidio]"
     python -m spacy download en_core_web_lg
 
 Non-English (e.g. Polish)::
 
-    pip install "pipecat-plugins-piiguard[presidio]"
+    pip install "pipecat-dograh-piiguard[presidio]"
     python -m spacy download pl_core_news_lg
     # then: PresidioPIIDetector(language="pl")
 
@@ -24,8 +24,7 @@ detector **fails loudly** instead of silently redacting nothing — silent
 zero-output is the worst failure mode for a redaction tool.
 
 The class lazy-imports the Presidio packages so the rest of this package
-remains importable without them. Same adapter ``livekit-plugins-piiguard``
-ships — reused as-is.
+remains importable without them.
 """
 
 from __future__ import annotations
@@ -169,7 +168,7 @@ class PresidioPIIDetector(PIIDetector):
         except ImportError as exc:
             raise ImportError(
                 "presidio-analyzer is required for PresidioPIIDetector. "
-                'Install with `pip install "pipecat-plugins-piiguard[presidio]"`.'
+                'Install with `pip install "pipecat-dograh-piiguard[presidio]"`.'
             ) from exc
 
         # English with no overrides keeps Presidio's fast default path.

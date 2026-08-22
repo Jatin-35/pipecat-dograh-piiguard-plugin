@@ -1,8 +1,7 @@
 """Replacement strategies for redacted entities.
 
 A strategy takes the original text + a list of detected entities and returns
-the redacted text. Identical to ``livekit-plugins-piiguard``'s
-``strategies.py`` — reused as-is since it has no LiveKit dependency.
+the redacted text.
 """
 
 from __future__ import annotations

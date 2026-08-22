@@ -24,9 +24,8 @@ rules, PESEL/NIP checksums. ``US_ZIP_CODE`` is *context-anchored*: a bare
 ZIP/postal keyword or US state precedes it, so order numbers and foreign
 postal codes are not silently redacted as ``[US_ZIP_CODE]``.
 
-This is the same engine ``livekit-plugins-piiguard`` ships — reused verbatim
-since it has no LiveKit dependency, per the design goal of not
-reimplementing detection logic that already exists and is tested.
+This detector has no framework dependency of its own — it's plain Python,
+usable from any host that can call an async ``detect(text)``.
 """
 
 from __future__ import annotations

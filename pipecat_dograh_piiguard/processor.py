@@ -12,9 +12,8 @@ Insertion point (see ``api/services/pipecat/pipeline_builder.py:build_pipeline``
     ]
 
 Placed after ``stt`` and before ``user_context_aggregator``, this guarantees
-redacted text is what actually reaches the LLM — the Pipecat equivalent of
-``livekit-plugins-piiguard``'s in-flight mode (its ``on_user_turn_completed``
-override), rather than piiguard's default end-of-call-only mode.
+redacted text is what actually reaches the LLM, rather than only being
+scrubbed after the fact when the transcript is persisted.
 
 Only touches ``TranscriptionFrame`` / ``InterimTranscriptionFrame`` (user
 speech). ``LLMTextFrame`` / ``TTSTextFrame`` (bot output) are intentionally
@@ -30,8 +29,8 @@ scrub what gets stored on that path (insert it right after the realtime LLM,
 before ``pipeline_engine_callback_processor``), but it cannot stop raw audio
 containing PII from reaching the remote realtime provider — that data has
 already left as audio by the time any frame reaches this processor. That is
-an audio-level problem, out of scope here just as it is for the original
-piiguard ("Isn't: an audio-level redactor").
+an audio-level redaction problem, out of scope for this processor (it works
+on text frames only).
 """
 
 from __future__ import annotations

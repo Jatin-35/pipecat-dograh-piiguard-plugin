@@ -6,8 +6,8 @@ class you must inherit. Any object exposing a ``name`` and an awaitable
 cloud API. A new backend drops in with **zero** changes to this package's
 public types.
 
-Identical in shape to ``livekit-plugins-piiguard``'s detector protocol —
-reused as-is, since the interface has no LiveKit dependency.
+The protocol has no framework dependency, so a new backend never needs to
+depend on Pipecat, Dograh, or anything else beyond the interface itself.
 """
 
 from __future__ import annotations

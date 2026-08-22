@@ -1,38 +1,33 @@
 # pipecat-dograh-piiguard
 
 PII redaction for [Dograh](https://github.com/dograh-hq/dograh)'s Pipecat-based
-voice pipeline. Same detection engine as
-[`livekit-plugins-piiguard`](../README.md) — Luhn-validated credit cards,
-mod-97-validated IBANs, context-anchored US ZIP detection, Polish national-ID
-patterns, optional Presidio NER backend — rebuilt against Pipecat's
-`FrameProcessor` architecture instead of LiveKit's `AgentSession`, since
-Dograh does not use LiveKit Agents (its voice pipeline is a fork of Pipecat,
-`dograh-hq/pipecat`, vendored as a git submodule).
+voice pipeline. Detects sensitive entities in chat transcripts and audio call
+history, replaces them with safe placeholders (or hashes / masks), and can
+stop raw PII from ever reaching your LLM provider. Detection runs locally by
+default — zero-dependency regex with Luhn / IBAN mod-97 / SSN validation, plus
+context-anchored US ZIP detection and Polish national-ID patterns. Plug in
+Microsoft Presidio for stronger NER on names and organizations when you need
+it.
+
+Built against Dograh's actual pipeline (a fork of Pipecat, `dograh-hq/pipecat`,
+vendored as a git submodule) using Pipecat's `FrameProcessor` architecture.
 
 ## Why a separate distribution
 
-This is a genuinely separate pip-installable package from
-`livekit-plugins-piiguard`, not a namespace extension of it, for two reasons:
+This package has zero hard dependencies, deliberately:
 
-1. **No cross-framework dependency bloat.** `livekit-plugins-piiguard`
-   depends on `livekit-agents`. If this plugin were folded into that same
-   distribution, installing it for Dograh would drag in `livekit-agents` for
-   users who have nothing to do with LiveKit. This package has zero hard
-   dependencies.
-2. **No namespace collision.** Pipecat's own top-level `pipecat` package is a
-   real, fully-owned package (`pipecat.frames`, `pipecat.processors`,
-   `pipecat.services`, ...) — unlike LiveKit, which deliberately ships
-   `livekit/` as an empty namespace package specifically so plugins can
-   extend it as `livekit.plugins.*`. There is no equivalent
-   `pipecat.plugins.*` extension point, so this package does not attempt to
-   live under the `pipecat` namespace; it's a flat top-level package,
-   `pipecat_dograh_piiguard`.
-
-The detection/redaction core (`types.py`, `strategies.py`, `detectors/`,
-`redactor.py`) is duplicated from `livekit-plugins-piiguard` rather than
-imported from it, for the same dependency-isolation reason. If a third
-integration target ever shows up, factor the shared core into its own
-package at that point.
+- Pipecat's own top-level `pipecat` package is a real, fully-owned package
+  (`pipecat.frames`, `pipecat.processors`, `pipecat.services`, ...) with no
+  official third-party extension namespace. So this package does not attempt
+  to live under the `pipecat` namespace — it's a flat top-level package,
+  `pipecat_dograh_piiguard`, avoiding any collision with the real framework.
+- Only `pipecat_dograh_piiguard.processor` needs the real `pipecat` package
+  importable at runtime, and it's intentionally *not* listed as a
+  dependency: Dograh's fork isn't published under a stable PyPI name (it's
+  installed from a git submodule inside Dograh's own environment), so
+  pinning a `pipecat` dependency here would either be wrong or redundant.
+  Everything else in this package — `Redactor`, the detectors, the
+  strategies — imports with zero dependencies at all.
 
 ## Two independent redaction points
 
@@ -46,8 +41,7 @@ protect, so there are two independent hooks:
    `PIIRedactionProcessor`, a `FrameProcessor` inserted between `stt` and
    `user_context_aggregator` in `build_pipeline()`. Redacts
    `TranscriptionFrame.text` in place before it becomes LLM context, so raw
-   PII never reaches your LLM provider. This is the equivalent of piiguard's
-   in-flight mode (`on_user_turn_completed` override in the LiveKit plugin).
+   PII never reaches your LLM provider.
 
 2. **Stored transcript** (`pipecat_dograh_piiguard/transcript_hook.py`) —
    `RedactingTranscriptCoordinator`, a transparent proxy around
@@ -60,7 +54,7 @@ protect, so there are two independent hooks:
 Use the fast regex detector (`RegexPIIDetector`, the default) for #1 since it
 runs on the hot path every turn. Optionally use the heavier Presidio backend
 (`PresidioPIIDetector`, better name/org recall, ~10-50ms/call) for #2 since
-it's off the critical path — same trade-off the LiveKit plugin documents.
+it's off the critical path.
 
 See [`examples/wiring_example.py`](examples/wiring_example.py) for the exact
 edits against `api/services/pipecat/pipeline_builder.py` and
@@ -85,6 +79,25 @@ transcript_log_coordinator = RedactingTranscriptCoordinator(
 )
 ```
 
+## What gets detected (default regex backend)
+
+| Group | Entities |
+|---|---|
+| `pii` | `EMAIL_ADDRESS`, `PHONE_NUMBER`, `US_SSN`, `US_ZIP_CODE`, `DATE_OF_BIRTH` |
+| `pci` | `CREDIT_CARD` (Luhn-validated), `IBAN` (mod-97-validated) |
+| `network` | `IP_ADDRESS`, `URL`, `MAC_ADDRESS` |
+| `secrets` | `AWS_ACCESS_KEY`, `GITHUB_TOKEN`, `JWT` |
+| Other | `BITCOIN_ADDRESS`, Polish national IDs (`PL_POSTAL_CODE`, `PL_PESEL`, `PL_NIP`) |
+
+## Replacement strategies
+
+| Strategy | Output | Use case |
+|---|---|---|
+| `placeholder` (default) | `[EMAIL_ADDRESS]` | Preserves conversational context |
+| `hash` | `#EMAIL_ADDRESS_a1b2c3d4` | Deterministic — same input → same hash |
+| `mask` | `**************1111` | Fixed-width replacement, `visible_tail=4` for card-last-4 |
+| `redact` | (empty string) | Drop the entity entirely |
+
 ## Install
 
 ```bash
@@ -93,13 +106,6 @@ pip install pipecat-dograh-piiguard
 pip install "pipecat-dograh-piiguard[presidio]"
 python -m spacy download en_core_web_lg
 ```
-
-`pipecat` itself is not a listed dependency: Dograh installs its own fork
-(`dograh-hq/pipecat`) from a git submodule rather than from PyPI, so pinning
-a `pipecat` dependency here would either be wrong or redundant. Only
-`pipecat_dograh_piiguard.processor` needs `pipecat` importable at runtime —
-it's there inside Dograh's own backend environment already. `Redactor` and
-the detectors import with zero extra dependencies.
 
 ## Known gap: realtime speech-to-speech
 
@@ -111,9 +117,21 @@ still scrub what gets *stored* on that path (insert it right after the
 realtime LLM), but it cannot stop raw audio containing PII from reaching the
 remote realtime provider — that data has already left as audio before any
 frame reaches this processor. This is an audio-level redaction problem, out
-of scope here just as it is for `livekit-plugins-piiguard`
-("**Isn't:** an audio-level redactor").
+of scope for this processor (it works on text frames only).
+
+## What this plugin is and isn't
+
+**Is:** a transcript-level PII redactor for Dograh's Pipecat pipeline.
+Detects sensitive entities, swaps them for safe placeholders, and can
+redact both in-flight (before the LLM sees it) and at the point transcripts
+are persisted.
+
+**Isn't:** an audio-level redactor (no beep-out in the recording itself), a
+full HIPAA compliance product, or a substitute for retention controls. For
+"zero data ever stored" use cases, configure your STT/LLM provider for
+zero-retention and use this plugin on the still-in-process transcript before
+logging.
 
 ## License
 
-Apache-2.0, matching the sibling `livekit-plugins-piiguard` package.
+Apache-2.0.

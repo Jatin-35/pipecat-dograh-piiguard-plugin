@@ -1,8 +1,6 @@
-"""Data types used across pipecat-plugins-piiguard.
+"""Data types used across pipecat-dograh-piiguard.
 
 Framework-agnostic: no dependency on pipecat, Dograh, or any other host.
-Identical in shape to ``livekit-plugins-piiguard``'s ``types.py`` — this is
-the same engine, reused rather than re-derived.
 """
 
 from __future__ import annotations

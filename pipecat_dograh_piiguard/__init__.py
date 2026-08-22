@@ -1,10 +1,9 @@
 """pipecat_dograh_piiguard — PII redaction for Dograh's Pipecat-based voice pipeline.
 
-Sibling to ``livekit-plugins-piiguard``: same detection engine (regex +
-optional Presidio), rebuilt against Dograh's actual pipeline (a fork of
-Pipecat) instead of LiveKit Agents. See the package README for the two
-integration points and ``examples/wiring_example.py`` for the exact diff
-against Dograh's own pipeline code.
+A detection engine (regex + optional Presidio) built against Dograh's actual
+pipeline, a fork of Pipecat. See the package README for the two integration
+points and ``examples/wiring_example.py`` for the exact diff against
+Dograh's own pipeline code.
 
 ``PIIRedactionProcessor`` (in :mod:`.processor`) is deliberately **not**
 imported here: it requires the real ``pipecat`` package importable at

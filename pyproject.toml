@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pipecat-dograh-piiguard"
 version = "0.1.0"
-description = "PII redaction for Dograh's Pipecat-based voice pipeline. Sibling plugin to livekit-plugins-piiguard, same detection engine, rebuilt against Pipecat's FrameProcessor architecture and Dograh's transcript persistence layer."
+description = "PII redaction for Dograh's Pipecat-based voice pipeline. Detects sensitive entities with pluggable local detectors (regex / Presidio) and redacts them in-flight and in stored transcripts, via Pipecat's FrameProcessor architecture and Dograh's transcript persistence layer."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -42,9 +42,7 @@ classifiers = [
 # at runtime, but pipecat isn't published under a stable PyPI name for the
 # dograh-hq/pipecat fork this targets (it's installed from a git submodule
 # inside Dograh's own environment) — so it is intentionally left out of
-# `dependencies` rather than pinned to the wrong package. This is a separate
-# distribution from `livekit-plugins-piiguard` specifically so installing
-# this package never pulls in `livekit-agents`, which Dograh has no use for.
+# `dependencies` rather than pinned to the wrong package.
 dependencies = []
 
 [project.optional-dependencies]
