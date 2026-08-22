@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pipecat-dograh-piiguard"
+version = "0.1.0"
+description = "PII redaction for Dograh's Pipecat-based voice pipeline. Sibling plugin to livekit-plugins-piiguard, same detection engine, rebuilt against Pipecat's FrameProcessor architecture and Dograh's transcript persistence layer."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [{ name = "Syntropic" }]
+keywords = [
+    "voice",
+    "ai",
+    "pipecat",
+    "dograh",
+    "pii",
+    "phi",
+    "redaction",
+    "anonymization",
+    "privacy",
+    "gdpr",
+    "hipaa",
+    "compliance",
+    "security",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Security",
+    "Topic :: Text Processing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+]
+# The core (types/strategies/detectors/redactor) has zero dependencies.
+# `pipecat_dograh_piiguard.processor` additionally needs `pipecat` importable
+# at runtime, but pipecat isn't published under a stable PyPI name for the
+# dograh-hq/pipecat fork this targets (it's installed from a git submodule
+# inside Dograh's own environment) — so it is intentionally left out of
+# `dependencies` rather than pinned to the wrong package. This is a separate
+# distribution from `livekit-plugins-piiguard` specifically so installing
+# this package never pulls in `livekit-agents`, which Dograh has no use for.
+dependencies = []
+
+[project.optional-dependencies]
+presidio = ["presidio-analyzer>=2.2", "presidio-anonymizer>=2.2"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["pipecat_dograh_piiguard"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/pipecat_dograh_piiguard", "/README.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
