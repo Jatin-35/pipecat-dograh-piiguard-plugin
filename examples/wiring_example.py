@@ -40,11 +40,14 @@ def build_pipeline_patch(transport, stt, pii_guard=None, *rest):
 # ── 2. api/services/pipecat/run_pipeline.py ─────────────────────────────────
 #
 # Construct the processor conditionally on a workflow_configurations flag,
-# the same idiom used for voicemail_detection:
+# the same idiom used for voicemail_detection — including the same
+# not-for-realtime gate voicemail_detection uses, since the realtime
+# pipeline has no stt/user_context_aggregator boundary to insert this at
+# (see GUIDE.md §3-4 for why):
 #
 #     pii_config = (workflow.workflow_configurations or {}).get("pii_redaction", {})
 #     pii_guard = None
-#     if pii_config.get("enabled", False):
+#     if pii_config.get("enabled", False) and not is_realtime:
 #         pii_guard = PIIRedactionProcessor(Redactor(strategy=pii_config.get("strategy", "placeholder")))
 #
 #     pipeline = build_pipeline(

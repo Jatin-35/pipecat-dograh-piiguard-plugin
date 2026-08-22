@@ -107,17 +107,21 @@ pip install "pipecat-dograh-piiguard[presidio]"
 python -m spacy download en_core_web_lg
 ```
 
-## Known gap: realtime speech-to-speech
+## Coverage: what this does and doesn't reach
 
-Dograh's realtime pipeline (`build_realtime_pipeline`, for models like OpenAI
-Realtime / Gemini Live handling audio natively) has no separate STT/TTS
-stage — the realtime LLM handles audio-to-audio directly and only broadcasts
-a `TranscriptionFrame` downstream for logging. `PIIRedactionProcessor` can
-still scrub what gets *stored* on that path (insert it right after the
-realtime LLM), but it cannot stop raw audio containing PII from reaching the
-remote realtime provider — that data has already left as audio before any
-frame reaches this processor. This is an audio-level redaction problem, out
-of scope for this processor (it works on text frames only).
+This plugin correctly covers two things: the LLM's context (via
+`PIIRedactionProcessor`) and the persisted transcript / QA-analysis text
+(via `RedactingTranscriptCoordinator`). It does **not** cover Dograh's
+realtime/speech-to-speech pipeline (no discrete transcript exists before
+the LLM in that mode — audio goes straight to the provider), the live
+WebSocket transcript feed to the frontend, OTEL/Langfuse tracing spans,
+`gathered_context` sent to outbound webhooks, or tool-call arguments/results
+logging — each of those is a separate code path in Dograh, verified against
+its actual source, not touched by either hook here.
+
+**See [`GUIDE.md`](GUIDE.md) for the full coverage map with file-level
+citations, exact wiring instructions, and what closing each remaining gap
+would require.**
 
 ## What this plugin is and isn't
 

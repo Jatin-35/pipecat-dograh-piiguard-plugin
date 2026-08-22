@@ -22,15 +22,18 @@ and ``tts`` if you also want to stop the bot from repeating PII it read out
 of a tool result.
 
 Known gap: Dograh's realtime speech-to-speech pipeline
-(``build_realtime_pipeline``) has no separate STT/TTS stage — the realtime
-LLM handles audio-to-audio directly and only broadcasts a
-``TranscriptionFrame`` downstream for logging. This processor can still
-scrub what gets stored on that path (insert it right after the realtime LLM,
-before ``pipeline_engine_callback_processor``), but it cannot stop raw audio
-containing PII from reaching the remote realtime provider — that data has
-already left as audio by the time any frame reaches this processor. That is
-an audio-level redaction problem, out of scope for this processor (it works
-on text frames only).
+(``build_realtime_pipeline``) has no separate STT/TTS stage and no discrete
+``TranscriptionFrame`` boundary before the LLM at all — audio goes straight
+to the realtime provider (OpenAI Realtime, Gemini Live). There is nothing
+for this processor to intercept in that mode, and inserting it anyway would
+not meaningfully help: the persisted-transcript coordinator
+(:mod:`.transcript_hook`) already covers storage for both pipeline modes
+regardless of where this processor sits, and Dograh's live WebSocket
+transcript feed / OTEL tracing spans bypass processor placement entirely
+(they're pipecat *observers*, which watch every ``push_frame`` call
+pipeline-wide). Gate this processor on ``not is_realtime`` and rely on the
+transcript coordinator alone for that path — see ``GUIDE.md`` in this
+package for the full coverage map (what is and isn't redacted, and why).
 """
 
 from __future__ import annotations
