@@ -123,6 +123,20 @@ its actual source, not touched by either hook here.
 citations, exact wiring instructions, and what closing each remaining gap
 would require.**
 
+## Integrating this into Dograh: exact diffs
+
+- **[`BACKEND_CHANGES.md`](BACKEND_CHANGES.md)** — the exact 3-file patch
+  against `dograh-hq/dograh`'s `api/` (requirements, pipeline builder, and
+  pipeline run wiring), including the per-workflow config gate and the
+  hardening that keeps a malformed config from crashing call setup.
+- **[`FRONTEND_CHANGES.md`](FRONTEND_CHANGES.md)** — the exact 2-file patch
+  against `dograh-hq/dograh`'s `ui/`, adding a settings-page toggle for this
+  feature that matches the existing Voicemail Detection UI pattern exactly.
+
+Both were verified against a real clone of `dograh-hq/dograh`: the backend
+diff compiles clean (`py_compile`), the frontend diff type-checks with zero
+errors across the whole app (`tsc --noEmit`) and passes ESLint.
+
 ## What this plugin is and isn't
 
 **Is:** a transcript-level PII redactor for Dograh's Pipecat pipeline.
